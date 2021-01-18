@@ -34,7 +34,9 @@
     <script>
         var wss = [];
         let gameId = prompt("gameId?", localStorage.getItem("id"));
-        localStorage.setItem("id", gameId);
+        let overworld = false;
+        if (gameId) localStorage.setItem("id", gameId);
+        else overworld = true;
         let spam = prompt("spam?");
         let password = prompt("password?");
         const p = document.getElementById("count");
@@ -47,15 +49,27 @@
                 ws.onmessage = e => {
                     switch (JSON.parse(e.data).e) {
                         case "result":
-                            if (password) ws.send(`{
+                            if (overworld) ws.send(`{
+                                "e": "games"
+                            }`);
+                            else
+                                if (password) ws.send(`{
                                     "e": "join",
                                     "g": "${gameId}",
                                     "p": "${password}"
                                 }`);
-                            else ws.send(`{
+                                else ws.send(`{
                                     "e": "join",
                                     "g": "${gameId}"
                                 }`);
+                            break;
+                        case "games":
+                            overworld = false;
+                            gameId = msg.g[0].id;
+                            ws.send(`{
+                                "e": "join",
+                                "g": "${gameId}"
+                            }`);
                             break;
                         case "join":
                             wss.push(ws);
