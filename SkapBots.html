@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SkapBots</title>
+    <link rel="icon" href="skap.ico">
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            background: #000000;
+            color: #00ff00;
+            text-align: center;
+            height: 100%;
+            font-family: monospace;
+            margin: 0;
+        }
+
+        p {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <p>Bots:&nbsp;<span id="count">0</span></p>
+    <script>
+        var wss = [];
+        let gameId = prompt("gameId?", localStorage.getItem("id"));
+        localStorage.setItem("id", gameId);
+        let spam = prompt("spam?");
+        let password = prompt("password?");
+        const p = document.getElementById("count");
+        function createBot() {
+            let ws = new WebSocket("wss://skap.io");
+            ws.onopen = () => {
+                ws.send(`{
+                        "e": "guest"
+                    }`);
+                ws.onmessage = e => {
+                    switch (JSON.parse(e.data).e) {
+                        case "result":
+                            if (password) ws.send(`{
+                                    "e": "join",
+                                    "g": "${gameId}",
+                                    "p": "${password}"
+                                }`);
+                            else ws.send(`{
+                                    "e": "join",
+                                    "g": "${gameId}"
+                                }`);
+                            break;
+                        case "join":
+                            wss.push(ws);
+                            p.innerHTML = wss.length;
+                            if (spam) {
+                                setInterval(() => {
+                                    ws.send(JSON.stringify({ e: "message", message: spam }));
+                                }, 3000);
+                                setTimeout(() => {
+                                    setInterval(() => {
+                                        ws.send(JSON.stringify({ e: "message", message: spam + "\u200c" }));
+                                    }, 3000);
+                                }, 100);
+                            }
+                    }
+                };
+            };
+        }
+        let num = prompt("How many bots?", 10);
+        for (let i = 0; i < num; i++) createBot();
+    </script>
+</body>
+
+</html>
